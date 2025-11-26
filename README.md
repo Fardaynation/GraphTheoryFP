@@ -399,8 +399,8 @@ The program shows:
 ## How to use
 User just need to input starting and target nodes since all calculation metrics happened behind the scenes.
 
-## Test Case Example
-**Input:**
+## Test Case Example(s)
+**Input 0:**
 
 node awal: ITS
 
@@ -417,3 +417,21 @@ Total delay : 3.80 ms
 Bottleneck bandwidth: 70.00 Mbps
 
 Nilai efektif : 3.0324
+
+**Input 1:**
+
+node awal: Japan
+
+node tujuan: London
+
+**Expected Output:**
+
+Japan -> Singapore -> London
+
+Total biaya         : 8.50
+
+Total delay         : 2.30 ms
+
+Bottleneck bandwidth: 70.00 Mbps
+
+Nilai efektif       : 4.0529
