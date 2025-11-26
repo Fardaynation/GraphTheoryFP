@@ -395,3 +395,18 @@ The program shows:
 * Total delay
 * Bottleneck bandwidth
 * Total effective score (the multi-metric combined cost)
+
+## How to use
+User just need to input starting and target nodes since all calculation metrics happened behind the scenes.
+
+## Test Case Example
+Input:
+node awal: ITS
+node tujuan: Dubai
+
+Expected output:
+TS -> Singapore -> London -> Dubai
+Total biaya : 15.70
+Total delay : 3.80 ms
+Bottleneck bandwidth: 70.00 Mbps
+Nilai efektif : 3.0324
