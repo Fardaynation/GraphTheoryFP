@@ -332,7 +332,7 @@ So instead of minimizing only cost, the algorithm minimizes:
 ```
 effectiveCost = 0.5*cost + 0.3*delay + 0.2*(1/bandwidth)
 ```
-**What the code does**
+## **What the code does**
 
 ### 1. **Loads the network graph**
 
@@ -376,7 +376,7 @@ Example:
 ITS -> Singapore -> London -> Eropa
 ```
 
-## **(D) Compute metrics along the chosen path**
+### **(D) Compute metrics along the chosen path**
 
 By walking backward from target to start:
 
