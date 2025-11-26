@@ -157,7 +157,7 @@ int findMinNode() {
 
 
 
-void primModified(int start, int target) {
+void Dijkstra(int start, int target) {
 
     for (int i = 0; i < N; i++) {
 
@@ -259,7 +259,7 @@ int main() {
 
 
 
-    primModified(start, target);
+    Dijkstra(start, target);
 
     printPath(target);
 
@@ -320,3 +320,86 @@ int main() {
 }
 
 ```
+---
+## Basic Explanation Regarding The Code
+This C program finds the **best path between two routers** by implementing **Dijkstra’s algorithm**, where the “best” edge is determined by a **weighted combination of three metrics**:
+
+* **Cost** → weight = 0.5
+* **Delay** → weight = 0.3
+* **Bandwidth** (inverted, because bigger is better) → weight = 0.2
+
+So instead of minimizing only cost, the algorithm minimizes:
+
+```
+effectiveCost = 0.5*cost + 0.3*delay + 0.2*(1/bandwidth)
+```
+---
+**What the code does**
+
+### 1. **Loads the network graph**
+
+* The graph has 6 nodes: ITS, Singapore, Japan, Dubai, London, Eropa.
+* Each pair of nodes has cost, delay, and bandwidth.
+* `INF` means no connection.
+
+---
+**Steps**
+### **(A) Read user input**
+
+User inputs:
+
+* Start node (e.g., “ITS”)
+* Target node (e.g., “Eropa”)
+
+The program maps these names to indices using `getNodeIndex()`.
+
+### **(B) Run Dijkstra's algorithm**
+
+The function `Dijkstra(start, target)` does:
+
+1. Initialize all nodes
+
+   * `minCost[i] = INF`
+   * `parent[i] = -1`
+   * `visited[i] = false`
+2. Set start node cost → `minCost[start] = 0`
+3. Repeatedly pick:
+
+   * the unvisited node with the smallest `minCost`
+4. Relax edges from this node using `effectiveCost(u, v)`
+5. Stop early when the **target** node is added.
+
+### **(C) Reconstruct the path**
+
+`printPath(target)` prints the final route by following `parent[]`.
+
+Example:
+
+```
+ITS -> Singapore -> London -> Eropa
+```
+
+---
+
+## **(D) Compute metrics along the chosen path**
+
+By walking backward from target to start:
+
+* Sum **cost**
+* Sum **delay**
+* Track **minimum bandwidth** (bottleneck)
+* Print final “effective” value from `minCost[target]`
+
+---
+
+### **FINAL OUTPUT**
+
+The program shows:
+
+* Path taken
+* Total cost
+* Total delay
+* Bottleneck bandwidth
+* Total effective score (the multi-metric combined cost)
+
+---
