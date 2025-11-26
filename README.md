@@ -5,6 +5,8 @@
 | Makna Alam Pratama | 5025241077 |
 | Rayen Yeriel Mangiwa | 5025241262 |
 
+## Raw Code
+
 ```C
 
 #include <stdio.h>
