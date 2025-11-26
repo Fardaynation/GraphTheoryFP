@@ -400,13 +400,13 @@ The program shows:
 User just need to input starting and target nodes since all calculation metrics happened behind the scenes.
 
 ## Test Case Example
-Input:
+**Input:**
 
 node awal: ITS
 
 node tujuan: Dubai
 
-Expected output:
+**Expected output:**
 
 TS -> Singapore -> London -> Dubai
 
