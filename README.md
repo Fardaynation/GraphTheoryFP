@@ -87,7 +87,7 @@ double bandwidth[N][N] = {
 
 // === BOBOT METRIK ===
 
-double alpha = 0.6; // cost
+double alpha = 0.5; // cost
 
 double beta  = 0.3; // delay
 
