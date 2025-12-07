@@ -7,431 +7,324 @@
 
 ## Raw Code
 
-```C
+```cpp
+#include <bits/stdc++.h>
+#include <iomanip>
+using namespace std;
 
-#include <stdio.h>
+const double INF = 1e9; // Use double for precise calculations
 
-#include <stdlib.h>
-
-#include <float.h>
-
-#include <stdbool.h>
-
-#include <string.h>
-
-
-
-#define N 6
-
-const char *labels[N] = {"ITS", "Singapore", "Japan", "Dubai", "London", "Eropa"};
-
-const double INF = 1e9;
-
-
-
-// === METRIC DATA ===
-
-double cost[N][N] = {
-
-    {INF, 5.2, INF, 8.0, INF, INF},   // ITS
-
-    {5.2, INF, 2.5, INF, 6.0, INF},   // Singapore
-
-    {INF, 2.5, INF, INF, INF, 7.5},   // Japan
-
-    {8.0, INF, INF, INF, 4.5, INF},   // Dubai
-
-    {INF, 6.0, INF, 4.5, INF, 3.0},   // London
-
-    {INF, INF, 7.5, INF, 3.0, INF}    // Eropa
-
+// --- 1. STRUCTURE TO HOLD DATA ---
+struct Edge {
+    int to;
+    double cost;      // Financial Cost
+    double delay;     // Latency (ms)
+    double bandwidth; // Bandwidth (Mbps)
 };
 
+struct graph {
+    int vertexCount;
+    
+    // Adjacency List stores neighbors and edge properties
+    vector<vector<Edge>> adjList;
+    
+    map<string, int> nameToIndex;
+    vector<string> indexToName;
+    vector<long> nodeBandwidths;
+    vector<bool> nodeStatus; 
 
+    // --- NEW: Global Weights (Stored here so they are remembered!) ---
+    double alpha = 0.5; // Default Cost Priority (50%)
+    double beta = 0.3;  // Default Delay Priority (30%)
+    double gamma = 0.2; // Default Bandwidth Priority (20%)
 
-double delay[N][N] = {
+    void init(int v) {
+        vertexCount = v;
+        indexToName.resize(v);
+        nodeBandwidths.resize(v);
+        nodeStatus.resize(v, true); 
 
-    {INF, 1.2, INF, 3.0, INF, INF},
+        adjList.clear();
+        adjList.resize(v);
+    }
 
-    {1.2, INF, 0.8, INF, 1.5, INF},
+    void set_node_data(int index, string name, long bandwidth) {
+        nameToIndex[name] = index;
+        indexToName[index] = name;
+        nodeBandwidths[index] = bandwidth;
+    }
 
-    {INF, 0.8, INF, INF, INF, 2.5},
+    // --- NEW FEATURE: Update Weights Dynamically ---
+    void update_weights(double a, double b, double c) {
+        alpha = a;
+        beta = b;
+        gamma = c;
+        cout << "\n[SUCCESS] Updated Priorities:" << endl;
+        cout << "Alpha (Cost): " << alpha << endl;
+        cout << "Beta (Delay): " << beta << endl;
+        cout << "Gamma (BW):   " << gamma << endl;
+    }
 
-    {3.0, INF, INF, INF, 1.1, INF},
+    void add_new_router(string name, long bandwidth) {
+        if (nameToIndex.find(name) != nameToIndex.end()) {
+            cout << "[ERROR] Router name '" << name << "' already exists!" << endl;
+            return;
+        }
+        int newIndex = vertexCount;
+        vertexCount++; 
+        nameToIndex[name] = newIndex;
+        indexToName.push_back(name);
+        nodeBandwidths.push_back(bandwidth);
+        nodeStatus.push_back(true); 
+        adjList.resize(vertexCount);
+        cout << "[SUCCESS] Added Router '" << name << "' (Index: " << newIndex << ")" << endl;
+    }
 
-    {INF, 1.5, INF, 1.1, INF, 0.9},
-
-    {INF, INF, 2.5, INF, 0.9, INF}
-
-};
-
-
-
-double bandwidth[N][N] = {
-
-    {0, 80, 0, 60, 0, 0},
-
-    {80, 0, 100, 0, 70, 0},
-
-    {0, 100, 0, 0, 0, 90},
-
-    {60, 0, 0, 0, 85, 0},
-
-    {0, 70, 0, 85, 0, 95},
-
-    {0, 0, 90, 0, 95, 0}
-
-};
-
-
-
-// === BOBOT METRIK ===
-
-double alpha = 0.5; // cost
-
-double beta  = 0.3; // delay
-
-double gamma = 0.2; // bandwidth (dibalik)
-
-
-
-int parent[N];
-
-double minCost[N];
-
-bool visited[N];
-
-
-
-int getNodeIndex(const char *name) {
-
-    for (int i = 0; i < N; i++)
-
-        if (strcasecmp(labels[i], name) == 0)
-
-            return i;
-
-    return -1;
-
-}
-
-
-
-// Hitung effective cost berdasarkan 3 parameter
-
-double effectiveCost(int u, int v) {
-
-    if (cost[u][v] == INF) return INF;
-
-    // proteksi bandwidth 0 (no-edge) agar tidak div/0
-
-    double bwInv = (bandwidth[u][v] > 0) ? (1.0 / bandwidth[u][v]) : DBL_MAX;
-
-    return alpha * cost[u][v] + beta * delay[u][v] + gamma * bwInv;
-
-}
-
-
-
-int findMinNode() {
-
-    double min = INF;
-
-    int idx = -1;
-
-    for (int i = 0; i < N; i++) {
-
-        if (!visited[i] && minCost[i] < min) {
-
-            min = minCost[i];
-
-            idx = i;
-
+    // --- CONNECTION FUNCTION ---
+    void add_connection_symmetric(string u_name, string v_name, double cost, double delay) {
+        if (nameToIndex.find(u_name) == nameToIndex.end() || 
+            nameToIndex.find(v_name) == nameToIndex.end()) {
+            cout << "[ERROR] Router not found!" << endl;
+            return;
         }
 
+        int u = nameToIndex[u_name];
+        int v = nameToIndex[v_name];
+
+        // Bottleneck Logic: The link is only as fast as the slowest router
+        double link_bw = min((double)nodeBandwidths[u], (double)nodeBandwidths[v]);
+
+        // Check if connection already exists (Update it if it does)
+        for(auto& edge : adjList[u]) {
+            if(edge.to == v) {
+                cout << "[INFO] Connection exists. Updating values." << endl;
+                edge.cost = cost;
+                edge.delay = delay;
+                edge.bandwidth = link_bw;
+                // Update the reverse path too
+                for(auto& rev_edge : adjList[v]) {
+                    if(rev_edge.to == u) {
+                        rev_edge.cost = cost;
+                        rev_edge.delay = delay;
+                        rev_edge.bandwidth = link_bw;
+                    }
+                }
+                return;
+            }
+        }
+
+        // Add new connection (Symmetric = Two-way)
+        adjList[u].push_back({v, cost, delay, link_bw});
+        adjList[v].push_back({u, cost, delay, link_bw});
+
+        cout << "[SUCCESS] Connected: " << u_name << " <--> " << v_name 
+             << " [Cost:" << cost << ", Delay:" << delay << ", BW:" << link_bw << "]" << endl;
     }
 
-    return idx;
-
-}
-
-
-
-void Dijkstra(int start, int target) {
-
-    for (int i = 0; i < N; i++) {
-
-        minCost[i] = INF;
-
-        parent[i] = -1;
-
-        visited[i] = false;
-
+    void toggle_router(string name, bool status) {
+        if (nameToIndex.find(name) == nameToIndex.end()) return;
+        nodeStatus[nameToIndex[name]] = status;
+        if(status) cout << "[EVENT] Router " << name << " REBOOTED." << endl;
+        else       cout << "[EVENT] Router " << name << " CRASHED." << endl;
     }
 
+    // --- DIJKSTRA ALGORITHM ---
+    void dijkstra(string startName) {
+        if (nameToIndex.find(startName) == nameToIndex.end()) return;
+        
+        int start = nameToIndex[startName];
+        if (!nodeStatus[start]) {
+            cout << "\n[CRITICAL] Source router " << startName << " is DOWN." << endl;
+            return;
+        }
 
+        vector<double> dist(vertexCount, INF);
+        vector<int> parent(vertexCount, -1);
+        
+        // Priority Queue: Always puts the smallest 'dist' at the top
+        priority_queue<pair<double, int>, vector<pair<double, int>>, greater<pair<double, int>>> pq;
 
-    minCost[start] = 0;
+        pq.push({0, start});
+        dist[start] = 0;
 
+        while (!pq.empty()) {
+            double d = pq.top().first;
+            int u = pq.top().second;
+            pq.pop();
 
+            if (d > dist[u]) continue;
 
-    while (1) {
+            for (auto& edge : adjList[u]) {
+                int v = edge.to;      
+                if (!nodeStatus[v]) continue; // Skip dead routers
 
-        int u = findMinNode();
+                // --- THE SCALED FORMULA ---
+                // We use the member variables 'alpha', 'beta', 'gamma' here!
+                // (1.0 / bandwidth) * 1,000,000 scales the small decimal up so it matters.
+                double effective_weight = (alpha * edge.cost) + 
+                                          (beta * edge.delay) + 
+                                          (gamma * (1.0 / edge.bandwidth) * 1000000.0);
 
-        if (u == -1) break;
+                if (dist[u] + effective_weight < dist[v]) {
+                    dist[v] = dist[u] + effective_weight;
+                    parent[v] = u;
+                    pq.push({dist[v], v});
+                }
+            }
+        }
 
-        visited[u] = true;
+        // --- PRINTING THE ROUTING TABLE ---
+        cout << "\n" << string(95, '=') << endl;
+        cout << "                ROUTING TABLE (Alpha=" << alpha << ", Beta=" << beta << ", Gamma=" << gamma << ")" << endl;
+        cout << string(95, '=') << endl;
+        cout << left << setw(15) << "Dest" << "| " << setw(15) << "Eff. Cost" << "| " << setw(15) << "Next Hop" << "| " << "Full Path" << endl;
+        cout << string(95, '-') << endl;
 
-        if (u == target) break;
+        for (int i = 0; i < vertexCount; i++) {
+            if (i == start) continue; 
 
+            cout << left << setw(15) << indexToName[i] << "| ";
 
-
-        for (int v = 0; v < N; v++) {
-
-            double ec = effectiveCost(u, v);
-
-            if (!visited[v] && ec < minCost[v]) {
-
-                parent[v] = u;
-
-                minCost[v] = ec;
-
+            if (!nodeStatus[i]) {
+                cout << setw(15) << "INF" << "| " << setw(15) << "-" << "| HOST DOWN" << endl;
+                continue;
             }
 
+            if (dist[i] == INF) {
+                cout << setw(15) << "Unreachable" << "| " << setw(15) << "-" << "| No Path" << endl;
+            } else {
+                cout << setw(15) << fixed << setprecision(2) << dist[i] << "| ";
+                
+                // Reconstruct Path Logic (Backtracking from Target -> Source)
+                int curr = i;
+                vector<string> pathStack;
+                while (curr != -1) {
+                    pathStack.push_back(indexToName[curr]);
+                    curr = parent[curr];
+                }
+
+                // Next Hop is the second to last element
+                if (pathStack.size() >= 2) 
+                    cout << setw(15) << pathStack[pathStack.size() - 2] << "| ";
+                else 
+                    cout << setw(15) << "-" << "| ";
+
+                // Print Full Path
+                for (int k = pathStack.size() - 1; k >= 0; k--) {
+                    cout << pathStack[k];
+                    if (k > 0) cout << " -> ";
+                }
+                cout << endl;
+            }
         }
-
+        cout << string(95, '=') << endl;
     }
-
-}
-
-
-
-void printPath(int target) {
-
-    if (parent[target] == -1) {
-
-        printf("%s", labels[target]);
-
-        return;
-
-    }
-
-    printPath(parent[target]);
-
-    printf(" -> %s", labels[target]);
-
-}
-
-
+};
 
 int main() {
-
-    char startName[50], targetName[50];
-
-
-
-    printf("Daftar router yang tersedia:\n");
-
-    for (int i = 0; i < N; i++) printf("- %s\n", labels[i]);
-
-    printf("\nMasukkan node awal: ");
-
-    scanf("%49s", startName);
-
-    printf("Masukkan node tujuan: ");
-
-    scanf("%49s", targetName);
-
-
-
-    int start = getNodeIndex(startName);
-
-    int target = getNodeIndex(targetName);
-
-    if (start == -1 || target == -1) {
-
-        printf("Nama node tidak valid. Pastikan sesuai daftar di atas.\n");
-
-        return 1;
-
-    }
-
-
-
-    Dijkstra(start, target);
-
-    printPath(target);
-
-    printf("\n");
-
-
-
-    if (parent[target] == -1) {
-
-        printf("Tidak ada jalur yang menghubungkan %s ke %s.\n", labels[start], labels[target]);
-
-        return 0;
-
-    }
-
-
-
-    double totalCost = 0, totalDelay = 0;
-
-    double bottleneckBandwidth = DBL_MAX; // kita cari min sepanjang path
-
-    int cur = target;
-
-    while (parent[cur] != -1) {
-
-        int p = parent[cur];
-
-        totalCost += cost[p][cur];
-
-        totalDelay += delay[p][cur];
-
-        if (bandwidth[p][cur] > 0 && bandwidth[p][cur] < bottleneckBandwidth) {
-
-            bottleneckBandwidth = bandwidth[p][cur];
-
-        }
-
-        cur = p;
-
-    }
-
-    if (bottleneckBandwidth == DBL_MAX) bottleneckBandwidth = 0; // safety fallback
-
+    graph g;
+    int n;
     
+    cout << "How many initial nodes: ";
+    if (!(cin >> n)) return 0;
+    
+    g.init(n);
 
-    printf("Total biaya         : %.2f\n", totalCost);
+    cout << "Enter Node Name and Bandwidth (e.g., 'A 1000'):" << endl;
+    for (int i = 0; i < n; i++) {
+        string name;
+        long bw;
+        cout << "Node " << i + 1 << ": ";
+        cin >> name >> bw;
+        g.set_node_data(i, name, bw);
+    }
 
-    printf("Total delay         : %.2f ms\n", totalDelay);
+    // --- INPUT CONNECTIONS ---
+    cout << "\nDefine Connections (Format: [Neighbor] [Cost] [Delay])" << endl;
+    cout << "Example: If A connects to B with Cost 50 and Delay 10, type: B 50 10" << endl;
+    
+    for (int i = 0; i < n; i++) {
+        string u_name = g.indexToName[i];
+        cout << "Node " << u_name << " connected to (Type 'DONE' to finish):" << endl;
+        
+        string v_name;
+        while (cin >> v_name) {
+            if (v_name == "DONE") break;
+            
+            double cost, delay;
+            // We must read Cost and Delay for the formula to work!
+            if (!(cin >> cost >> delay)) break; 
+            
+            g.add_connection_symmetric(u_name, v_name, cost, delay);
+        }
+    }
 
-    printf("Bottleneck bandwidth: %.2f Mbps\n", bottleneckBandwidth);
+    string startNode;
+    cout << "\nSet Source Router: ";
+    cin >> startNode;
 
-    printf("Nilai efektif       : %.4f\n", minCost[target]);
+    while(true) {
+        g.dijkstra(startNode); // Runs immediately so you see results
 
+        cout << "\n[MENU]" << endl;
+        cout << "1: Kill Router        2: Revive Router" << endl;
+        cout << "3: Change Source      4: Add Connection" << endl;
+        cout << "5: ADD NEW ROUTER     6: Exit" << endl;
+        cout << "7: CHANGE WEIGHTS (Alpha, Beta, Gamma)" << endl;
+        cout << "Select: ";
+        int choice;
+        if (!(cin >> choice)) break;
 
+        if (choice == 6) break;
+        
+        string target, target2;
+        if (choice == 1) {
+            cout << "Target to KILL: "; cin >> target;
+            g.toggle_router(target, false);
+        }
+        else if (choice == 2) {
+            cout << "Target to REVIVE: "; cin >> target;
+            g.toggle_router(target, true);
+        }
+        else if (choice == 3) {
+            cout << "New Source: "; cin >> target;
+            // Check if node exists before setting
+            if (g.nameToIndex.find(target) != g.nameToIndex.end()) {
+                startNode = target;
+            } else {
+                cout << "[ERROR] Node does not exist." << endl;
+            }
+        }
+        else if (choice == 4) {
+            double c, d;
+            cout << "Connect Node: "; cin >> target;
+            cout << "With Node: ";    cin >> target2;
+            cout << "Cost: ";         cin >> c;
+            cout << "Delay: ";        cin >> d;
+            g.add_connection_symmetric(target, target2, c, d);
+        }
+        else if (choice == 5) {
+            string name;
+            long bw;
+            cout << "New Router Name: "; cin >> name;
+            cout << "Bandwidth: ";       cin >> bw;
+            g.add_new_router(name, bw);
+        }
+        else if (choice == 7) {
+            double a, b, c;
+            cout << "\nEnter new weights (Sum should be 1.0 ideally):" << endl;
+            cout << "Alpha (Cost Priority): "; cin >> a;
+            cout << "Beta (Delay Priority): "; cin >> b;
+            cout << "Gamma (BW Priority):   "; cin >> c;
+            g.update_weights(a, b, c);
+        }
+    }
 
     return 0;
-
 }
 
 ```
 ## Basic Explanation Regarding The Code
-This C program finds the **best path between two routers** by implementing **Dijkstra’s algorithm**, where the “best” edge is determined by a **weighted combination of three metrics**:
 
-* **Cost** → weight = 0.5
-* **Delay** → weight = 0.3
-* **Bandwidth** (inverted, because bigger is better) → weight = 0.2
-
-So instead of minimizing only cost, the algorithm minimizes:
-
-```
-effectiveCost = 0.5*cost + 0.3*delay + 0.2*(1/bandwidth)
-```
-## **What the code does**
-
-### 1. **Loads the network graph**
-
-* The graph has 6 nodes: ITS, Singapore, Japan, Dubai, London, Eropa.
-* Each pair of nodes has cost, delay, and bandwidth.
-* INF means no connection.
-
-**Steps**
-### **(A) Read user input**
-
-User inputs:
-
-* Start node (e.g., “ITS”)
-* Target node (e.g., “Eropa”)
-
-The program maps these names to indices using `getNodeIndex()`.
-
-### **(B) Run Dijkstra's algorithm**
-
-The function `Dijkstra(start, target)` does:
-
-1. Initialize all nodes
-
-   * `minCost[i] = INF`
-   * `parent[i] = -1`
-   * `visited[i] = false`
-2. Set start node cost → `minCost[start] = 0`
-3. Repeatedly pick:
-
-   * the unvisited node with the smallest `minCost`
-4. Relax edges from this node using `effectiveCost(u, v)`
-5. Stop early when the **target** node is added.
-
-### **(C) Reconstruct the path**
-
-`printPath(target)` prints the final route by following `parent[]`.
-
-Example:
-
-```
-ITS -> Singapore -> London -> Eropa
-```
-
-### **(D) Compute metrics along the chosen path**
-
-By walking backward from target to start:
-
-* Sum **cost**
-* Sum **delay**
-* Track **minimum bandwidth** (bottleneck)
-* Print final “effective” value from `minCost[target]`
-
-
-### **FINAL OUTPUT**
-
-The program shows:
-
-* Path taken
-* Total cost
-* Total delay
-* Bottleneck bandwidth
-* Total effective score (the multi-metric combined cost)
-
-## How to use
-User just need to input starting and target nodes since all calculation metrics happened behind the scenes.
-
-## Test Case Example(s)
-**Input 0:**
-
-node awal: ITS
-
-node tujuan: Dubai
-
-**Expected output:**
-
-TS -> Singapore -> London -> Dubai
-
-Total biaya : 15.70
-
-Total delay : 3.80 ms
-
-Bottleneck bandwidth: 70.00 Mbps
-
-Nilai efektif : 3.0324
-
-**Input 1:**
-
-node awal: Japan
-
-node tujuan: London
-
-**Expected Output:**
-
-Japan -> Singapore -> London
-
-Total biaya         : 8.50
-
-Total delay         : 2.30 ms
-
-Bottleneck bandwidth: 70.00 Mbps
 
 Nilai efektif       : 4.0529
