@@ -325,3 +325,18 @@ int main() {
 
 ```
 ## Basic Explanation Regarding The Code
+This is an updated version from our last (mostly failed attempt) network router simulator.
+It lets you Build a network of routers
+Each connection has:
+Cost
+Delay (how slow it is)
+Bandwidth (how fast/big it is)
+
+We can decide what matters most:
+"I want the cheapest path" → prioritize cost
+"I want the fastest path" → prioritize low delay
+"I want the highest speed path" → prioritize bandwidth
+
+Users can also break routers (simulate crashes) and see what happens!
+on top of that, they can add new routers anytime
+It instantly shows you the best path from one router to all others
