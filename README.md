@@ -350,6 +350,7 @@ It instantly shows you the best path from one router to all others
 6. Pick whichever one you desire
 ## Sample test case
 Input:
+
 3
 
 A 1000
