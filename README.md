@@ -351,58 +351,84 @@ It instantly shows you the best path from one router to all others
 ## Sample test case
 Input:
 3
+
 A 1000
+
 B 500
+
 C 1000
 
 B 20 30
+
 C 100 5
+
 DONE
 
 C 60 40
 DONE
+
 
 DONE
 
 A
 
 7
+
 0.2
+
 0.7
+
 0.1
 
 1
+
 B
 
 2
+
 B
 
 5
+
 D 2000
 
 4
+
 A
+
 D
+
 10 15
+
 D
+
 C
+
 5 8
+
 6
+
 Output:
 Routing table based on the current inputs
 example from the given input case:
 
 ```
 3
+
 A 1000
+
 B 500
+
 C 1000
 
 B 20 30
+
 C 100 5
+
 DONE
 
 C 60 40
+
 DONE
 
 DONE
