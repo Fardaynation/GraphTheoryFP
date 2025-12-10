@@ -340,3 +340,80 @@ We can decide what matters most:
 Users can also break routers (simulate crashes) and see what happens!
 on top of that, they can add new routers anytime
 It instantly shows you the best path from one router to all others
+## How to use:
+1. Start the program
+   You will be asked how many nodes initially.
+2. Enter the routers name and its bandwidth.
+3. Connect the nodes; type "DONE" when finnished.
+4. Pick the source
+5. A Menu will pop up giving you options on what you want to do.
+6. Pick whichever one you desire
+## Sample test case
+Input:
+3
+A 1000
+B 500
+C 1000
+
+B 20 30
+C 100 5
+DONE
+
+C 60 40
+DONE
+
+DONE
+
+A
+
+7
+0.2
+0.7
+0.1
+
+1
+B
+
+2
+B
+
+5
+D 2000
+
+4
+A
+D
+10 15
+D
+C
+5 8
+6
+Output:
+Routing table based on the current inputs
+example from the given input case:
+```
+3
+A 1000
+B 500
+C 1000
+
+B 20 30
+C 100 5
+DONE
+
+C 60 40
+DONE
+
+DONE
+
+A
+```
+Up to that point. it will give this table as an output
+===============================================================================================
+                ROUTING TABLE (Alpha=0.5, Beta=0.3, Gamma=0.2)
+===============================================================================================
+Dest           | Eff. Cost      | Next Hop       | Full Path
+-----------------------------------------------------------------------------------------------
+B              | 434.00         | B              | A -> B
+C              | 235.00         | C              | A -> C
+===============================================================================================
