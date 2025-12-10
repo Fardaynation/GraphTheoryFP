@@ -391,6 +391,7 @@ C
 Output:
 Routing table based on the current inputs
 example from the given input case:
+
 ```
 3
 A 1000
@@ -408,12 +409,6 @@ DONE
 
 A
 ```
-Up to that point. it will give this table as an output
-===============================================================================================
-                ROUTING TABLE (Alpha=0.5, Beta=0.3, Gamma=0.2)
-===============================================================================================
-Dest           | Eff. Cost      | Next Hop       | Full Path
------------------------------------------------------------------------------------------------
-B              | 434.00         | B              | A -> B
-C              | 235.00         | C              | A -> C
-===============================================================================================
+Up to that point, it will give an output as shown below
+
+<img width="2026" height="345" alt="image" src="https://github.com/user-attachments/assets/d5e99020-66bb-4e43-a824-d2c99393b283" />
